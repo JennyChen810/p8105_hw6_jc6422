@@ -35,3 +35,20 @@ set.seed(123)
 boot_samples = map(1:5000, ~sample_n(weather_df, size = nrow(weather_df), replace = TRUE))
 ```
 
+Perform linear regression on each bootstrap sample
+
+```{r}
+boot_results = map_dfr(
+  boot_samples,
+  ~ {
+    model = lm(tmax ~ tmin, data = .x)
+    glance_result = broom::glance(model) %>% 
+      select(r.squared)
+    coef_result = broom::tidy(model) %>%
+      filter(term != "(Intercept)") %>%
+      summarize(log_coef = log(estimate[1] * coef(model)[1]))
+    cbind(glance_result, coef_result)
+  }
+)
+```
+
