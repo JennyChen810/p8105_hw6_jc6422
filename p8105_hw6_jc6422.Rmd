@@ -52,3 +52,32 @@ boot_results = map_dfr(
 )
 ```
 
+Compute 2.5% and 97.5% quantiles
+
+```{r}
+quantiles = quantile(boot_results$r.squared, probs = c(0.025, 0.975))
+quantiles
+```
+
+```{r}
+logcoef_quantiles = quantile(boot_results$log_coef, probs = c(0.025, 0.975))
+logcoef_quantiles
+```
+
+Plot the distributions
+
+```{r}
+boot_results %>%
+  ggplot(aes(x = r.squared)) +
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Bootstrap Distribution of R-Squared", x = "R-Squared", y = "Density")
+
+boot_results %>%
+  ggplot(aes(x = log_coef)) +
+  geom_density(fill = "yellow", alpha = 0.5) +
+  labs(title = "Bootstrap Distribution of log(beta0 * beta1)", x = "log(beta0 * beta1)", y = "Density")
+```
+
+
+
+
