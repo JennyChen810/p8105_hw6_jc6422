@@ -28,3 +28,10 @@ weather_df =
   select(name, id, everything())
 ```
 
+Define bootstrap resampling function
+
+```{r}
+set.seed(123)
+boot_samples = map(1:5000, ~sample_n(weather_df, size = nrow(weather_df), replace = TRUE))
+```
+
