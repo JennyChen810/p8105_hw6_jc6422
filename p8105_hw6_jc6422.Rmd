@@ -71,13 +71,41 @@ boot_results %>%
   ggplot(aes(x = r.squared)) +
   geom_density(fill = "blue", alpha = 0.5) +
   labs(title = "Bootstrap Distribution of R-Squared", x = "R-Squared", y = "Density")
+```
 
+This plot shows the distribution of R^2, which is approximately normal. The range is narrow.
+
+```{r}
 boot_results %>%
   ggplot(aes(x = log_coef)) +
   geom_density(fill = "yellow", alpha = 0.5) +
   labs(title = "Bootstrap Distribution of log(beta0 * beta1)", x = "log(beta0 * beta1)", y = "Density")
 ```
 
+This plot shows the distribution of log(beta0 * beta1), which is also approximately normal. 
+
+## Problem 2
+
+Import dataset
+
+```{r}
+data1= read_csv("homicide-data.csv")
+```
+Clean data
+
+```{r}
+data1 = data1 %>%
+  mutate(
+    city_state = paste(city, state, sep = ", "),
+    victim_age = as.numeric(victim_age)
+  ) %>%
+  filter(
+    !(is.na(victim_age)),
+    !(city_state %in% c("Dallas, TX", "Phoenix, AZ", "Kansas City, MO", "Tulsa, AL")),
+    victim_race %in% c("White", "Black")
+  )
+data1
+```
 
 
 
