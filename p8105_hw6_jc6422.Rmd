@@ -107,5 +107,23 @@ data1 = data1 %>%
 data1
 ```
 
+Fit a Logistic regression for Baltimore,MD
 
+```{r}
+balti = data1 %>%
+  filter(city_state == "Baltimore, MD") %>%
+  mutate(resolved = ifelse(disposition == "Closed by arrest", 1, 0))
 
+balti_model = glm(resolved ~ victim_age + victim_sex + victim_race, 
+                       family = binomial, data = balti)
+
+balti_model
+```
+
+Obtain the estimate and confidence interval of the adjusted odds ratio.
+
+```{r}
+balti_or = broom::tidy(balti_model, conf.int = TRUE, exponentiate = TRUE) %>%
+  filter(term == "victim_sexMale")
+balti_or
+```
