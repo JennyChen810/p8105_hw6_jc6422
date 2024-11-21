@@ -127,3 +127,26 @@ balti_or = broom::tidy(balti_model, conf.int = TRUE, exponentiate = TRUE) %>%
   filter(term == "victim_sexMale")
 balti_or
 ```
+
+
+Fit a logistic regression for all cities
+
+
+```{r}
+city = data1 %>%
+  mutate(resolved = ifelse(disposition == "Closed by arrest", 1, 0))
+
+city_model = city %>%
+  group_by(city_state) %>%
+  nest() %>%
+  mutate(
+    model = map(data, ~ glm(resolved ~ victim_age + victim_sex + victim_race, 
+                            family = binomial, data = .x)),
+    results = map(model, ~ broom::tidy(.x, conf.int = TRUE, exponentiate = TRUE))
+  ) %>%
+  unnest(results) %>%
+  filter(term == "victim_sexMale") %>%
+  select(city_state, estimate, conf.low, conf.high)
+
+city_model
+```
