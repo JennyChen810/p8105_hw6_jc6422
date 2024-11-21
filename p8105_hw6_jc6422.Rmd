@@ -128,9 +128,7 @@ balti_or = broom::tidy(balti_model, conf.int = TRUE, exponentiate = TRUE) %>%
 balti_or
 ```
 
-
 Fit a logistic regression for all cities
-
 
 ```{r}
 city = data1 %>%
@@ -150,3 +148,33 @@ city_model = city %>%
 
 city_model
 ```
+
+Create a plot shows the estimated ORs and CIs for each city.
+
+```{r}
+city_model %>%
+  ggplot(aes(x = estimate, y = reorder(city_state, estimate))) +
+  geom_point() +
+  geom_errorbar(aes(xmin = conf.low, xmax = conf.high), width = 0.6) +
+  labs(
+    title = "Adjusted Odds Ratios for Male vs Female Victims by City",
+    x = "Odds Ratio (Male vs Female)",
+    y = "City"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 5)
+  )
+
+```
+
+Based on this plot, Albuquerque, NM has the largest confidence interval, which suggests a high level of uncertainty, and New York, NY has the smallest confidence interval. 
+
+The majority of cities have adjusted odds ratios close to 1, indicates that there is no significant difference in the likelihood of solving homicides between male and female victims and gender does not play a strong role in determining whether a homicide is resolved.
+
+A few cities show ORs below 1, suggests that homicides involving female victims are resolved at a slightly higher rate. For some cities show ORs higher than 1 indicates a higher likelihood of solving homicides for male victims compared to female victims, but the higher confidence interval reduces the reliability of the observed effect.
+
+## Question 3
+
+
+
