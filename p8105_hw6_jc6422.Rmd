@@ -5,10 +5,10 @@ date: "2024-11-19"
 output: github_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup}
 library(tidyverse)
 library(modelr)
+set.seed(1)
 ```
 
 ## Problem 1
@@ -32,58 +32,77 @@ weather_df =
 Define bootstrap resampling function
 
 ```{r}
-set.seed(123)
-boot_samples = map(1:5000, ~sample_n(weather_df, size = nrow(weather_df), replace = TRUE))
+boot_straps = 
+  tibble(strap_number = 1:5000,
+         strap_sample = rerun(5000, sample_frac(weather_df, replace = TRUE)))
 ```
 
 Perform linear regression on each bootstrap sample
 
 ```{r}
-boot_results = map_dfr(
-  boot_samples,
-  ~ {
-    model = lm(tmax ~ tmin, data = .x)
-    glance_result = broom::glance(model) %>% 
-      select(r.squared)
-    coef_result = broom::tidy(model) %>%
-      filter(term != "(Intercept)") %>%
-      summarize(log_coef = log(estimate[1] * coef(model)[1]))
-    cbind(glance_result, coef_result)
-  }
-) 
+boot_results = boot_straps %>%
+  mutate(
+    models = map(strap_sample, ~lm(tmax ~ tmin, data = .x)),
+    results = map(models, ~{
+      glance_result = broom::glance(.x)
+      r_squared = glance_result$r.squared
+      
+      tidy_result= broom::tidy(.x)
+      coef_result = log(tidy_result$estimate[1] * tidy_result$estimate[2])
+      
+      tibble(
+        r_squared = r_squared,
+        coef_result = coef_result
+      )
+    })
+  ) %>%
+  select(strap_number,results) %>%
+  unnest(results)
 ```
 
 Compute 2.5% and 97.5% quantiles
 
 ```{r}
-quantiles = quantile(boot_results$r.squared, probs = c(0.025, 0.975))
-quantiles
+summary = boot_results %>%
+  summarize(
+    r_squared_mean = mean(r_squared),
+    r_squared_sd = sd(r_squared),
+    r_squared_ci_lower = quantile(r_squared, 0.025),
+    r_squared_ci_upper = quantile(r_squared, 0.975),
+    log_coef_mean = mean(coef_result),
+    log_coef_sd = sd(coef_result),
+    log_coef_ci_lower = quantile(coef_result, 0.025),
+    log_coef_ci_upper = quantile(coef_result, 0.975)
+  ) 
+summary
 ```
 
-```{r}
-logcoef_quantiles = quantile(boot_results$log_coef, probs = c(0.025, 0.975))
-logcoef_quantiles
-```
+The CI for R^squared is (`r sprintf("%.3f", summary$r_squared_ci_lower)`, `r sprintf("%.3f", summary$r_squared_ci_upper)`)
+
+The CI for log(beta0*beta1) is (`r sprintf("%.3f", summary$log_coef_ci_lower)`,`r sprintf("%.3f", summary$log_coef_ci_upper)`)
 
 Plot the distributions
 
 ```{r}
 boot_results %>%
-  ggplot(aes(x = r.squared)) +
+  ggplot(aes(x = r_squared)) +
   geom_density(fill = "blue", alpha = 0.5) +
   labs(title = "Bootstrap Distribution of R-Squared", x = "R-Squared", y = "Density")
 ```
 
-This plot shows the distribution of R^2, which is approximately normal. The range is narrow.
+This plot shows the distribution of R^2, which is approximately normal. 
+The range is narrow. 
+The peak is around 0.91.
 
 ```{r}
 boot_results %>%
-  ggplot(aes(x = log_coef)) +
+  ggplot(aes(x = coef_result)) +
   geom_density(fill = "yellow", alpha = 0.5) +
   labs(title = "Bootstrap Distribution of log(beta0 * beta1)", x = "log(beta0 * beta1)", y = "Density")
 ```
 
 This plot shows the distribution of log(beta0 * beta1), which is also approximately normal. 
+The peak is around 2.02.
 
 ## Problem 2
 
