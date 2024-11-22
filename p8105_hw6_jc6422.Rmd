@@ -8,6 +8,7 @@ output: github_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(modelr)
 ```
 
 ## Problem 1
@@ -89,7 +90,7 @@ This plot shows the distribution of log(beta0 * beta1), which is also approximat
 Import dataset
 
 ```{r}
-data1= read_csv("homicide-data.csv")
+data1= read_csv("data/homicide-data.csv")
 ```
 Clean data
 
@@ -175,6 +176,71 @@ The majority of cities have adjusted odds ratios close to 1, indicates that ther
 A few cities show ORs below 1, suggests that homicides involving female victims are resolved at a slightly higher rate. For some cities show ORs higher than 1 indicates a higher likelihood of solving homicides for male victims compared to female victims, but the higher confidence interval reduces the reliability of the observed effect.
 
 ## Question 3
+
+Import data
+
+```{r}
+data2= read_csv("data/birthweight.csv")
+```
+
+Clean the data
+
+```{r}
+data2 = data2 %>%
+  mutate(
+    babysex = factor(babysex, labels = c("Male", "Female")),
+    malform = factor(malform, labels = c("Absent", "Present")),
+    mrace = factor(mrace),
+    frace = factor(frace)
+  )
+```
+
+Model 1: Hypothesis model
+
+Predictors: `blength`, `gaweeks`, `delwt`, `fincome`, `smoken`,`wtgain`.
+
+```{r}
+model1 = lm(bwt ~ blength + gaweeks + delwt + fincome + smoken + wtgain, data = data2)
+
+model1
+```
+
+Model 2(simple model): using length at birth and gestational age as predictors
+
+```{r}
+model2 = lm(bwt ~ blength + gaweeks, data = data2)
+model2
+```
+
+Model3(Interaction model): using head circumferenc, length, sex, and all interactions between these
+
+```{r}
+model3 = lm(bwt ~ bhead * blength * babysex, data = data2)
+model3
+```
+
+Add predictions and residuals for model 1
+
+```{r}
+data2 = data2 %>%
+  add_predictions(model1, var = "pred_bwt") %>%
+  add_residuals(model1, var = "resid_bwt")
+```
+
+Plot the residuals against fitted values
+
+```{r}
+ggplot(data2, aes(x = pred_bwt, y = resid_bwt)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "yellow") +
+  labs(
+    title = "Residuals vs Fitted Values for Model 1",
+    x = "Fitted Values (Predicted Birthweight)",
+    y = "Residuals"
+  ) +
+  theme_minimal()
+```
+
 
 
 
